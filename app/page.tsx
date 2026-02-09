@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import UploadDropzone from '@/components/UploadDropzone';
 import Chat from '@/components/Chat';
+import ModelsInfo from '@/components/ModelsInfo';
 
 interface DocumentInfo {
   docId: string;
@@ -62,14 +63,18 @@ export default function Home() {
             </div>
 
             {document && (
-              <button
-                onClick={handleClearDocument}
-                className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
-                  px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-              >
-                Upload new document
-              </button>
+              <div className="flex items-center gap-3">
+                <ModelsInfo />
+                <button
+                  onClick={handleClearDocument}
+                  className="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200
+                    px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Upload new document
+                </button>
+              </div>
             )}
+            {!document && <ModelsInfo />}
           </div>
         </div>
       </header>

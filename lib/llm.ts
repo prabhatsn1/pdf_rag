@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/llm.ts
 // Gemini LLM client with streaming support
 
@@ -5,7 +6,7 @@ import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import type { Chunk, LLMConfig, Citation } from './types';
 
 const DEFAULT_CONFIG: LLMConfig = {
-  model: 'gemini-1.5-flash',
+  model: process.env.GOOGLE_LLM_MODEL || 'gemini-1.5-flash',
   maxTokens: 4096,
   temperature: 0.3,
 };
@@ -36,6 +37,7 @@ function getClient(): GoogleGenerativeAI {
     if (!apiKey) {
       throw new Error('GOOGLE_API_KEY environment variable is not set');
     }
+    console.log(`[LLM] Initializing Google AI client with LLM model: ${DEFAULT_CONFIG.model}`);
     genAI = new GoogleGenerativeAI(apiKey);
   }
   return genAI;
@@ -196,4 +198,59 @@ export async function askWithContextSync(
  */
 export function isModelConfigured(): boolean {
   return !!process.env.GOOGLE_API_KEY;
+}
+/**
+ * List all available models from Google Generative AI
+ */
+export async function listAvailableModels(): Promise<
+  Array<{
+    displayName: string;
+    name: string;
+    description: string;
+    version: string;
+    supportedGenerationMethods: string[];
+    temperature?: number;
+    topP?: number;
+    topK?: number;
+  }>
+> {
+  try {
+    const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY;
+    if (!apiKey) {
+      throw new Error('GOOGLE_GENERATIVE_AI_API_KEY environment variable is not set');
+    }
+
+    // Use Google's REST API to list models
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+      method: 'GET',
+      headers: {
+        'x-goog-api-key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch models: ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as any;
+
+    // Transform the results to a simpler format
+    return (data.models || [])
+      .map((model: any) => ({
+        displayName: model.displayName || model.name,
+        name: model.name.split('/').pop() || model.name, // Extract model name from "models/gemini-1.5-flash"
+        description: model.description || '',
+        version: model.version || '',
+        supportedGenerationMethods: model.supportedGenerationMethods || [],
+        temperature: model.temperature,
+        topP: model.topP,
+        topK: model.topK,
+      }))
+      .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
+  } catch (error) {
+    console.error('[LLM] Failed to list models:', error);
+    throw new Error(
+      `Failed to list available models: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
+  }
 }

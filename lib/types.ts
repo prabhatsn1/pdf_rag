@@ -64,7 +64,7 @@ export interface EmbeddingResult {
 }
 
 export interface LLMConfig {
-  model: 'gemini-1.5-flash' | 'gemini-1.5-pro';
+  model: string; // Can be any model name, configurable via GOOGLE_LLM_MODEL env var
   maxTokens?: number;
   temperature?: number;
 }

@@ -153,6 +153,54 @@ Ask a question about an uploaded document.
 - `type: "done"` - End of response with citations
 - `type: "error"` - Error message
 
+### GET /api/health
+
+Health check endpoint to verify Google Gemini API connection.
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "message": "Successfully connected to Gemini API with embedding-001",
+  "model": "embedding-001",
+  "dimension": 768
+}
+```
+
+**Status Codes**:
+
+- `200` - Connection successful
+- `503` - Service unavailable (API connection failed)
+- `500` - Internal server error
+
+### GET /api/models
+
+List all available Google Generative AI models.
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "count": 15,
+  "models": [
+    {
+      "displayName": "Gemini 1.5 Flash",
+      "name": "gemini-1.5-flash",
+      "description": "Fast and efficient model for general tasks",
+      "version": "001",
+      "supportedGenerationMethods": ["generateContent", "streamGenerateContent"],
+      "temperature": 1,
+      "topP": 0.95,
+      "topK": 64
+    }
+  ]
+}
+```
+
+**Use Case**: Useful for frontends to dynamically display available models and allow users to switch between them.
+
 ## Configuration
 
 ### Environment Variables

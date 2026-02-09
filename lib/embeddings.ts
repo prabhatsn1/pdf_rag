@@ -1,11 +1,11 @@
 // lib/embeddings.ts
-// Google Embeddings client using text-embedding-004
+// Google Embeddings client - model configurable via GOOGLE_EMBEDDING_MODEL env var
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { EmbeddingResult } from './types';
 
-const EMBEDDING_MODEL = 'text-embedding-004';
-const EMBEDDING_DIMENSION = 768; // text-embedding-004 dimension
+const EMBEDDING_MODEL = process.env.GOOGLE_EMBEDDING_MODEL || 'embedding-001';
+const EMBEDDING_DIMENSION = parseInt(process.env.GOOGLE_EMBEDDING_DIMENSION || '768', 10);
 const MAX_BATCH_SIZE = 100; // Max texts per batch request
 const RATE_LIMIT_DELAY = 100; // ms between batches
 const MAX_RETRIES = 3;
@@ -36,6 +36,7 @@ function getClient(): GoogleGenerativeAI {
     console.log(
       `[Embeddings] Initializing Google AI client with API key: ${apiKey.substring(0, 8)}...`
     );
+    console.log(`[Embeddings] Using model: ${EMBEDDING_MODEL} (dimension: ${EMBEDDING_DIMENSION})`);
     genAI = new GoogleGenerativeAI(apiKey);
   }
   return genAI;
@@ -46,6 +47,48 @@ function getClient(): GoogleGenerativeAI {
  */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Test the connection to Google's Generative AI API
+ */
+export async function testConnection(): Promise<{
+  success: boolean;
+  message: string;
+  model?: string;
+  dimension?: number;
+}> {
+  try {
+    const client = getClient();
+    const model = client.getGenerativeModel({ model: EMBEDDING_MODEL });
+
+    // Test with a simple embedding
+    console.log('[Embeddings] Testing connection with model embedding...');
+    const testText = 'test connection';
+    const result = await model.embedContent(testText);
+
+    if (!result.embedding || !result.embedding.values) {
+      return {
+        success: false,
+        message: 'Invalid response: missing embedding values',
+      };
+    }
+
+    return {
+      success: true,
+      message: `Successfully connected to Gemini API with ${EMBEDDING_MODEL}`,
+      model: EMBEDDING_MODEL,
+      dimension: result.embedding.values.length,
+    };
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[Embeddings] Connection test failed:', errorMessage);
+
+    return {
+      success: false,
+      message: `Failed to connect: ${errorMessage}`,
+    };
+  }
 }
 
 /**
